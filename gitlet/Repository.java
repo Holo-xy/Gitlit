@@ -80,9 +80,7 @@ public class Repository {
         };
 
         // Update the staging area
-        Map<String, String> map = readObject(STAGING_AREA_FILE, HashMap.class);
-        map.put(fileName, fileSha1);
-        writeObject(STAGING_AREA_FILE, (Serializable) map);
+        updateStagingArea(fileName, fileContent, "add");
 
         // Save the file
         File stagedFile = join(OBJECTS_DIR, fileSha1);
@@ -119,7 +117,31 @@ public class Repository {
         // Clear the staging area
         writeObject(STAGING_AREA_FILE, new HashMap<String, String>());
 
-        System.out.println("Committed as " + commitSha1);
+    }
+
+    public static void rm(String fileName) {
+
+        if(!STAGING_AREA_FILE.exists() || (isStagingAreaEmpty() && !isFileTrackedInCurrentCommit(fileName)) ) {
+            System.out.println("No reason to remove the file");
+            return;
+        }
+
+        if(!isStagingAreaEmpty()) {
+            Map<String, String> map = readObject(STAGING_AREA_FILE, HashMap.class);
+            map.remove(fileName);
+            writeObject(STAGING_AREA_FILE, (Serializable) map);
+        }
+
+        if (isFileTrackedInCurrentCommit(fileName)) {
+            File file = join(CWD, fileName);
+
+            if(file.exists()){
+                file.delete();
+            }
+            byte[] fileContent = readContents(join(CWD, fileName));
+            updateStagingArea(fileName,fileContent,"remove");
+
+        }
     }
 
     private static void createDirectoryIfNotExists(File directory) {
@@ -153,6 +175,21 @@ public class Repository {
     private static boolean isStagingAreaEmpty() {
         Map<String, String> stagingArea = readObject(STAGING_AREA_FILE, HashMap.class);
         return stagingArea.isEmpty();
+    }
+
+    private static boolean isFileTrackedInCurrentCommit(String fileName) {
+        File file = join(OBJECTS_DIR, readContentsAsString(HEAD_FILE));
+        Commit commit = readObject(file, Commit.class);
+        byte[] fileContent = readContents(join(CWD, fileName));
+        String fileSha1 = sha1(fileContent);
+        return (Objects.equals(commit.children.get(fileName), fileSha1));
+    }
+
+    private static void updateStagingArea(String fileName, byte[] fileContent, String flag) {
+        String fileSha1 = sha1(fileContent);
+        Map<String, String> map = readObject(STAGING_AREA_FILE, HashMap.class);
+        map.put(fileName, flag + "," + fileSha1);
+        writeObject(STAGING_AREA_FILE, (Serializable) map);
     }
 
 }

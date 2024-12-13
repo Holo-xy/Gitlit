@@ -21,6 +21,9 @@ public class Main {
             case "commit":
                 gitlet.Repository.commit(args[1]);
                 break;
+            case "rm":
+                gitlet.Repository.rm(args[1]);
+                break;
         }
     }
 }
