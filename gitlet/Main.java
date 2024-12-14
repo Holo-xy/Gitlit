@@ -24,6 +24,15 @@ public class Main {
             case "rm":
                 gitlet.Repository.rm(args[1]);
                 break;
+            case "log":
+                gitlet.Repository.log();
+                break;
+            case "global-log":
+                gitlet.Repository.globalLog();
+                break;
+            case "find":
+                gitlet.Repository.find(args[1]);
+                break;
         }
     }
 }

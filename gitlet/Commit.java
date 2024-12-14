@@ -6,7 +6,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import static gitlet.Utils.readObject;
+import static gitlet.Utils.*;
 
 /** Represents a gitlet commit object.
  *
@@ -18,6 +18,7 @@ public class Commit implements Serializable {
     private String message;
     private Date date;
     private Commit parent;
+    private String commitHash;
 
     public Map<String, String> children = new HashMap<String, String>();
 
@@ -25,6 +26,7 @@ public class Commit implements Serializable {
         this.message = "initial commit";
         this.date = new Date(0);
         this.parent = null;
+        this.commitHash = sha1(serialize(this));
     }
 
 
@@ -32,6 +34,7 @@ public class Commit implements Serializable {
         this.message = message;
         this.date = new Date();
         this.parent = parent;
+        this.commitHash = sha1(serialize(this));
     }
 
     public void cloneChildren(Commit parent) {
@@ -57,6 +60,22 @@ public class Commit implements Serializable {
     public void saveCommit(String name) {
         File file = Utils.join(Repository.OBJECTS_DIR, name);
         Utils.writeObject(file, this);
+    }
+
+    public Commit getParent(){
+        return parent;
+    }
+
+    public String getCommitHash() {
+        return commitHash;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public String toString() {
+        return "commit " + getCommitHash() + "\n" + "Date: " + date + "\n" + message;
     }
 
 }

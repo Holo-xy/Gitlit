@@ -50,11 +50,10 @@ public class Repository {
         createDirectoryIfNotExists(BRANCH_HEADS_DIR);
 
         Commit initialCommit = new Commit();
-        String commitSha1 = sha1(serialize(initialCommit));
-        writeObject(join(OBJECTS_DIR, commitSha1), initialCommit);
+        writeObject(join(OBJECTS_DIR, initialCommit.getCommitHash()), initialCommit);
 
         createFileWithContents(BRANCH_HEAD_FILE, "refs/heads/master");
-        createFileWithContents(HEAD_FILE, commitSha1);
+        createFileWithContents(HEAD_FILE, initialCommit.getCommitHash());
     }
 
 
@@ -108,11 +107,10 @@ public class Repository {
         commit.updateChildren();
 
         // Serialize and store the new commit
-        String commitSha1 = sha1(serialize(commit));
-        createFileWithObject(join(OBJECTS_DIR, commitSha1), commit);
+        createFileWithObject(join(OBJECTS_DIR, commit.getCommitHash()), commit);
 
         // Update HEAD
-        writeContents(HEAD_FILE, commitSha1);
+        writeContents(HEAD_FILE, commit.getCommitHash());
 
         // Clear the staging area
         writeObject(STAGING_AREA_FILE, new HashMap<String, String>());
@@ -143,6 +141,40 @@ public class Repository {
 
         }
     }
+
+    public static void log(){
+        Commit commit = Commit.readCommit(readContentsAsString(HEAD_FILE));
+        while (commit.getParent() != null) {
+            System.out.println(commit);
+            commit = commit.getParent();
+        }
+        System.out.println(commit);
+    }
+
+    public static void globalLog(){
+        for(String file : plainFilenamesIn(BRANCH_HEADS_DIR)){
+            HEAD_FILE = join(BRANCH_HEADS_DIR, file);
+            log();
+        }
+    }
+
+    public static void find(String message){
+        Commit commit = Commit.readCommit(readContentsAsString(HEAD_FILE));
+        for(String file : plainFilenamesIn(BRANCH_HEADS_DIR)){
+            HEAD_FILE = join(BRANCH_HEADS_DIR, file);
+            while (commit.getParent() != null) {
+                if (Objects.equals(commit.getMessage(), message)){
+                    System.out.println(commit);
+                }
+                commit = commit.getParent();
+            }
+            if (Objects.equals(commit.getMessage(), message)){
+                System.out.println(commit);
+            }
+        }
+    }
+
+
 
     private static void createDirectoryIfNotExists(File directory) {
         if (!directory.exists()) {
